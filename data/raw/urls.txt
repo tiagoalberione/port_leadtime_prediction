@@ -1,8 +1,0 @@
-Utilizados:
-https://dados.transportes.gov.br/dataset/estadia-embarcacao
-https://dados.transportes.gov.br/dataset/documento-unico-virtual-psp
-https://dados.transportes.gov.br/dataset/agencia-navegacao-psp
-
-Outros:
-https://dados.transportes.gov.br/dataset/embarcacao-area-afetada
-https://dados.transportes.gov.br/dataset/tempo-estadia-embarcacoes
