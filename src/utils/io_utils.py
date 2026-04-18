@@ -21,12 +21,19 @@ def read_csv_flexible(
     This function can be extended later to try multiple encodings
     and separators automatically.
     """
-    return pd.read_csv(
+    df = pd.read_csv(
         file_path,
         sep=sep,
         encoding=encoding,
         low_memory=low_memory,
+        skipinitialspace=True,
     )
+
+    # To remove the spaces from beginning and end of each cell in the imported dataframe
+    text_cols = df.select_dtypes(include=["object", "string"]).columns
+    df[text_cols] = df[text_cols].apply(lambda col: col.str.strip())
+
+    return df
 
 
 def concat_dataframes(dataframes: Iterable[pd.DataFrame]) -> pd.DataFrame:

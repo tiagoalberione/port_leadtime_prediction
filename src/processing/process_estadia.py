@@ -25,20 +25,67 @@ def standardize_column_names(df: pd.DataFrame) -> pd.DataFrame:
         df.columns
         .str.strip()
         .str.lower()
+        .str.replace(" - ", " ", regex=False)
         .str.replace(" ", "_", regex=False)
     )
     return df
+
+def parse_mixed_datetime_column(series: pd.Series) -> pd.Series:
+    """Parse mixed naive/timezone-aware datetime strings into UTC."""
+    s = series.astype("string").str.strip()
+    s = s.mask(s.eq(""), pd.NA)
+
+    has_tz = s.str.contains(r"(Z|[+-]\d{2}(:?\d{2})?)$", na=False)
+    result = pd.Series(pd.NaT, index=series.index, dtype="datetime64[ns, UTC]")
+
+    if has_tz.any():
+        result.loc[has_tz] = pd.to_datetime(
+            s.loc[has_tz],
+            errors="coerce",
+            utc=True,
+        )
+
+    if (~has_tz).any():
+        parsed_naive = pd.to_datetime(
+            s.loc[~has_tz],
+            errors="coerce",
+        )
+        result.loc[~has_tz] = (
+            parsed_naive
+            .dt.tz_localize(
+                "America/Sao_Paulo",
+                ambiguous="NaT",
+                nonexistent="NaT",
+            )
+            .dt.tz_convert("UTC")
+        )
+
+    return result
 
 
 def create_basic_columns(df: pd.DataFrame) -> pd.DataFrame:
     """
     Create basic calculated columns.
+
     Extend this function according to your business rules.
     """
     df = df.copy()
 
-    # Example placeholder:
-    # df["ano_referencia"] = pd.to_datetime(df["data_evento"]).dt.year
+    # Treat datetime columns and standardize them in UTC.
+    date_cols = [
+        "estadia_chegada_no_porto",
+        "estadia_atracacao",
+        "estadia_desatracacao",
+        "estadia_saida_do_porto",
+    ]
+
+    # Some date columns have defined timezone and other don't. 
+    # This function handles both scenarios and import the dates, converting them accordingly.
+    for col in date_cols:
+        df[col] = parse_mixed_datetime_column(df[col])
+
+    df["ano_referencia"] = df["estadia_chegada_no_porto"].dt.year
+    df["mes_referencia"] = df["estadia_chegada_no_porto"].dt.month
 
     return df
 
