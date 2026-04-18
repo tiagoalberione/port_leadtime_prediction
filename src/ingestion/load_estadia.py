@@ -36,7 +36,7 @@ def load_estadia_files(
         )
 
         # Track source file for traceability
-        df_file["source_file"] = file_path.name
+        #df_file["source_file"] = file_path.name
 
         dataframes.append(df_file)
 

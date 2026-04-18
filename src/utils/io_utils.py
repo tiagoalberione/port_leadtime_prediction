@@ -38,7 +38,15 @@ def read_csv_flexible(
 
 def concat_dataframes(dataframes: Iterable[pd.DataFrame]) -> pd.DataFrame:
     """Concatenate multiple DataFrames into a single DataFrame."""
-    return pd.concat(list(dataframes), ignore_index=True)
+    dataframes_list = list(dataframes)
+
+    if not dataframes_list:
+        raise ValueError("No DataFrames were provided for concatenation.")
+
+    if len(dataframes_list) == 1:
+        return dataframes_list[0].copy()
+
+    return pd.concat(dataframes_list, ignore_index=True)
 
 
 def save_parquet(df: pd.DataFrame, output_path: Path) -> None:

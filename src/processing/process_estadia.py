@@ -35,7 +35,7 @@ def parse_mixed_datetime_column(series: pd.Series) -> pd.Series:
     s = series.astype("string").str.strip()
     s = s.mask(s.eq(""), pd.NA)
 
-    has_tz = s.str.contains(r"(Z|[+-]\d{2}(:?\d{2})?)$", na=False)
+    has_tz = s.str.contains(r"(?:Z|[+-]\d{2}(?::\d{2})?)$", na=False)
     result = pd.Series(pd.NaT, index=series.index, dtype="datetime64[ns, UTC]")
 
     if has_tz.any():
