@@ -1,3 +1,5 @@
+from doctest import master
+
 import pandas as pd
 
 
@@ -61,6 +63,24 @@ def build_master_calls(df_port_call: pd.DataFrame) -> pd.DataFrame:
         .agg(agg_dict)
         .sort_values(["port", "arrival_port_ts"], na_position="last")
         .reset_index(drop=True)
+    )
+
+    master["port_display"] = (
+        master["port"].astype("string").fillna("")
+        + " - "
+        + master["port_name"].astype("string").fillna("")
+    )
+
+    master["source_port_display"] = (
+        master["source_port"].astype("string").fillna("")
+        + " - "
+        + master["source_port_name"].astype("string").fillna("")
+    )
+
+    master["destination_port_display"] = (
+        master["destination_port"].astype("string").fillna("")
+        + " - "
+        + master["destination_port_name"].astype("string").fillna("")
     )
 
     return master

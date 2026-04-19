@@ -49,5 +49,11 @@ def process_ports(df: pd.DataFrame, coord_decimals: int = 5) -> pd.DataFrame:
         .drop_duplicates(subset=["port"], keep="first")
         .reset_index(drop=True)
     )
+    
+    df["port_display"] = (
+        df["port"].astype("string").fillna("")
+        + " - "
+        + df["port_name"].astype("string").fillna("")
+    )
 
     return df

@@ -34,6 +34,13 @@ def prepare_port_reference_for_weather(
     missing_cols = [col for col in required_cols if col not in df.columns]
     if missing_cols:
         raise ValueError(f"Missing required columns in processed ports data: {missing_cols}")
+    
+    if "port_display" not in df.columns:
+        df["port_display"] = (
+            df["port"].astype("string").fillna("")
+            + " - "
+            + df["port_name"].astype("string").fillna("")
+        )
 
     return df
 
@@ -108,20 +115,32 @@ def merge_weather_features(
     df = df.copy()
     df["arrival_date"] = pd.to_datetime(df["arrival_port_ts"], errors="coerce").dt.floor("D")
 
-    port_ref_cols = [
-        "port",
-        "port_name",
-        "city",
-        "state",
-        "region",
-        "latitude",
-        "longitude",
-        "latitude_r",
-        "longitude_r",
-    ]
+    ports_ref = (
+        ports_df[
+            [
+                "port",
+                "port_name",
+                "port_display",
+                "city",
+                "state",
+                "region",
+                "latitude",
+                "longitude",
+                "latitude_r",
+                "longitude_r",
+            ]
+        ]
+        .drop_duplicates(subset=["port"])
+        .rename(
+            columns={
+                "port_name": "port_name_ref",
+                "port_display": "port_display_ref",
+            }
+        )
+    )
 
     df = df.merge(
-        ports_df[port_ref_cols].drop_duplicates(subset=["port"]),
+        ports_ref,
         on="port",
         how="left",
     )
