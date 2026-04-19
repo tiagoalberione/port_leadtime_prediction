@@ -55,7 +55,9 @@ def process_port_call(df: pd.DataFrame) -> pd.DataFrame:
         "estadia_desatracacao",
         "estadia_saida_do_porto",
     ]
-    df = parse_datetime_columns(df, datetime_cols)
+    df = parse_datetime_columns(df, 
+                                datetime_cols = datetime_cols,
+                                local_tz="America/Sao_Paulo")
     df = rename_port_call_columns(df)
 
     return df

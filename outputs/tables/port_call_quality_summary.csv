@@ -1,0 +1,15 @@
+metric,value
+total_rows,146037
+unique_port_call_id,146037
+missing_arrival_port_ts,8
+missing_berthing_ts,3
+missing_unberthing_ts,3892
+missing_departure_port_ts,4105
+arrival_after_berthing,1
+berthing_after_unberthing,0
+unberthing_after_departure,0
+negative_wait_for_berthing,1
+negative_operation,0
+negative_post_operation,0
+negative_total_port_stay,0
+eligible_for_eda,141895
