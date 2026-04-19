@@ -10,8 +10,12 @@ from src.processing.cleaning import (
 
 
 def load_port_call_files(input_dir: Path) -> pd.DataFrame:
-    """Load raw estadia files from directory."""
-    return load_csv_files_from_dir(input_dir=input_dir, add_source_file=False)
+    """Load raw port call files from directory."""
+    return load_csv_files_from_dir(
+        input_dir=input_dir,
+        add_source_file=False,
+        min_columns=5,
+    )
 
 
 def rename_port_call_columns(df: pd.DataFrame) -> pd.DataFrame:
@@ -61,13 +65,3 @@ def process_port_call(df: pd.DataFrame) -> pd.DataFrame:
     df = rename_port_call_columns(df)
 
     return df
-
-
-def load_estadia_files(input_dir: Path) -> pd.DataFrame:
-    """Backward-compatible alias for legacy imports."""
-    return load_port_call_files(input_dir)
-
-
-def process_estadia(df: pd.DataFrame) -> pd.DataFrame:
-    """Backward-compatible alias for legacy imports."""
-    return process_port_call(df)
