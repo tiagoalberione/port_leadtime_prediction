@@ -31,7 +31,7 @@ def rename_port_call_columns(df: pd.DataFrame) -> pd.DataFrame:
         "passageiros_transito": "transit_passengers",
         "passageiros_desembarque": "unboarding_passengers",
         "passageiros_total": "total_passengers",
-        "estadia_motivos_atracacao": "port_call_reasons",
+        "estadia_motivos_atracacao": "operation_type",
         "estadia_chegada_no_porto": "arrival_port_ts",
         "estadia_atracacao": "berthing_ts",
         "estadia_desatracacao": "unberthing_ts",
@@ -59,3 +59,13 @@ def process_port_call(df: pd.DataFrame) -> pd.DataFrame:
     df = rename_port_call_columns(df)
 
     return df
+
+
+def load_estadia_files(input_dir: Path) -> pd.DataFrame:
+    """Backward-compatible alias for legacy imports."""
+    return load_port_call_files(input_dir)
+
+
+def process_estadia(df: pd.DataFrame) -> pd.DataFrame:
+    """Backward-compatible alias for legacy imports."""
+    return process_port_call(df)

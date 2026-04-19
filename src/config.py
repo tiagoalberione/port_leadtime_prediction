@@ -1,7 +1,7 @@
 from src.paths import INTERIM_DIR, PROCESSED_DIR
 # TODO: Incluir thresholds, lista de features, listas de colunas categóricas e numéricas
 
-ESTADIA_CLEAN_FILE = INTERIM_DIR / "estadia_clean.parquet"
+PORT_CALL_CLEAN_FILE = INTERIM_DIR / "port_call_clean.parquet"
 MASTER_CALLS_FILE = INTERIM_DIR / "master_calls.parquet"
 MASTER_QC_FILE = INTERIM_DIR / "master_calls_qc.parquet"
 TARGET_BASE_FILE = INTERIM_DIR / "target_base.parquet"

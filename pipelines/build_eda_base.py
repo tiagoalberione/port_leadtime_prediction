@@ -9,7 +9,7 @@ from src.config import (
     TARGET_BASE_FILE,
     EDA_BASE_FILE,
 )
-from src.data_sources.estadia import load_estadia_files, process_estadia
+from src.data_sources.port_call import load_port_call_files, process_port_call
 from src.processing.master_table import build_master_calls
 from src.processing.validation import (
     add_event_presence_flags,
@@ -25,8 +25,8 @@ from src.features.congestion import create_congestion_features
 def main() -> None:
     ensure_directories([INTERIM_DIR, PROCESSED_DIR])
 
-    df_estadia_raw = load_estadia_files(RAW_DIR / "estadia")
-    df_estadia = process_estadia(df_estadia_raw)
+    df_estadia_raw = load_port_call_files(RAW_DIR / "estadia")
+    df_estadia = process_port_call(df_estadia_raw)
     df_estadia.to_parquet(ESTADIA_CLEAN_FILE, index=False)
 
     df_master = build_master_calls(df_estadia)
