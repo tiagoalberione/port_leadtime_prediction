@@ -53,7 +53,9 @@ def process_ports(df: pd.DataFrame, coord_decimals: int = 5) -> pd.DataFrame:
     df["port_display"] = (
         df["port"].astype("string").fillna("")
         + " - "
-        + df["port_name"].astype("string").fillna("")
+        + df["city"].astype("string").fillna("")
+        + " - "
+        + df["state"].astype("string").fillna("")
     )
 
     return df

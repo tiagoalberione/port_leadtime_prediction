@@ -23,6 +23,7 @@ from src.data_sources.ports import load_port_files, process_ports
 from src.data_sources.weather import load_weather_files, process_weather
 from src.features.calendar import create_calendar_features
 from src.features.congestion import create_basic_congestion_features
+from src.features.operation_types import create_operation_type_flags
 from src.features.weather_features import (
     prepare_port_reference_for_weather,
     create_weather_history_features,
@@ -78,6 +79,7 @@ def build_port_call_base() -> pd.DataFrame:
     target_summary.to_csv(TABLES_DIR / "target_summary.csv", index=False)
 
     df_internal = create_calendar_features(df_target)
+    df_internal = create_operation_type_flags(df_internal)
     df_internal = create_basic_congestion_features(df_internal)
     df_internal.to_parquet(INTERNAL_FEATURES_FILE, index=False)
 

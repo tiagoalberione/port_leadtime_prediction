@@ -144,6 +144,7 @@ def merge_weather_features(
         on="port",
         how="left",
     )
+    df["port_display"] = df["port_display_ref"].fillna(df["port_display"])
 
     weather_merge_cols = [
         "latitude_r",
