@@ -2,3 +2,7 @@ pandas
 pyarrow
 jupyter
 ipykernel
+matplotlib
+geopandas
+geobr
+mapclassify

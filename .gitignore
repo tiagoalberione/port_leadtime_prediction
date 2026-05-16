@@ -22,3 +22,4 @@ Thumbs.db
 # Data outputs
 data/interim/*.parquet
 data/processed/*.parquet
+outputs/
