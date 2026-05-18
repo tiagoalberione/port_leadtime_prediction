@@ -73,15 +73,22 @@ def add_extreme_duration_flags(
     return df
 
 
-def define_eda_eligibility(df: pd.DataFrame) -> pd.DataFrame:
+def define_eda_eligibility(
+    df: pd.DataFrame,
+    min_arrival_date: str = "2023-01-01",
+) -> pd.DataFrame:
     """Define whether each port call is eligible for EDA."""
     df = df.copy()
+
+    min_arrival_ts = pd.Timestamp(min_arrival_date)
+    df["flag_arrival_before_min_date"] = df["arrival_port_ts"] < min_arrival_ts
 
     df["eligible_for_eda"] = (
         df["has_arrival_port_ts"]
         & df["has_berthing_ts"]
         & df["has_unberthing_ts"]
         & df["has_departure_port_ts"]
+        & ~df["flag_arrival_before_min_date"].fillna(False)
         & ~df["flag_arrival_after_berthing"].fillna(False)
         & ~df["flag_berthing_after_unberthing"].fillna(False)
         & ~df["flag_unberthing_after_departure"].fillna(False)
@@ -89,6 +96,9 @@ def define_eda_eligibility(df: pd.DataFrame) -> pd.DataFrame:
         & ~df["flag_negative_tmp_operation_h"].fillna(False)
         & ~df["flag_negative_tmp_post_operation_h"].fillna(False)
         & ~df["flag_negative_tmp_total_port_stay_h"].fillna(False)
+        & ~df["flag_wait_too_long"].fillna(False)
+        & ~df["flag_operation_too_long"].fillna(False)
+        & ~df["flag_total_too_long"].fillna(False)
     )
 
     return df
@@ -105,6 +115,7 @@ def build_quality_summary(df: pd.DataFrame) -> pd.DataFrame:
                 "missing_berthing_ts",
                 "missing_unberthing_ts",
                 "missing_departure_port_ts",
+                "arrival_before_min_date",
                 "arrival_after_berthing",
                 "berthing_after_unberthing",
                 "unberthing_after_departure",
@@ -124,6 +135,7 @@ def build_quality_summary(df: pd.DataFrame) -> pd.DataFrame:
                 (~df["has_berthing_ts"]).sum(),
                 (~df["has_unberthing_ts"]).sum(),
                 (~df["has_departure_port_ts"]).sum(),
+                df["flag_arrival_before_min_date"].fillna(False).sum(),
                 df["flag_arrival_after_berthing"].fillna(False).sum(),
                 df["flag_berthing_after_unberthing"].fillna(False).sum(),
                 df["flag_unberthing_after_departure"].fillna(False).sum(),
