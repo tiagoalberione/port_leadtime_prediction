@@ -6,3 +6,9 @@ matplotlib
 geopandas
 geobr
 mapclassify
+scikit-learn
+joblib
+numpy
+lightgbm
+xgboost
+shap
