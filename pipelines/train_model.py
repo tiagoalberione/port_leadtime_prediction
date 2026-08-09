@@ -26,6 +26,7 @@ from src.modeling.baselines import (
     add_global_mean_baseline,
     add_global_median_baseline,
     add_group_median_baseline,
+    add_hierarchical_median_baseline,
 )
 from src.modeling.features import build_feature_matrix, build_preprocessor
 from src.modeling.metrics import evaluate_predictions, evaluate_by_segment
