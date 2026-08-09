@@ -1,10 +1,32 @@
-from doctest import master
+"""Consolidação dos registros brutos em uma linha por escala portuária."""
 
 import pandas as pd
 
 
 def build_master_calls(df_port_call: pd.DataFrame) -> pd.DataFrame:
-    """Build a master table with one row per port call."""
+    """Consolida os eventos brutos em uma linha por `port_call_id`.
+
+    O Porto Sem Papel pode trazer mais de um registro associado à mesma escala.
+    Para o TCC, cada escala precisa representar uma única observação. Por isso,
+    esta função mantém os atributos textuais do primeiro registro e consolida os
+    timestamps de forma coerente com a sequência temporal da escala:
+
+    - primeira chegada ao porto;
+    - primeira atracação;
+    - última desatracação;
+    - última saída do porto.
+
+    Parameters
+    ----------
+    df_port_call:
+        DataFrame já limpo e com os nomes de colunas padronizados.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Base com uma linha por `port_call_id`, usada posteriormente nos testes
+        de qualidade e no cálculo do tempo total de permanência.
+    """
     required_cols = [
         "port_call_id",
         "port",
@@ -16,18 +38,19 @@ def build_master_calls(df_port_call: pd.DataFrame) -> pd.DataFrame:
         "source_port",
         "source_port_name",
         "destination_port",
-        "destination_port_name",   
+        "destination_port_name",
         "arrival_port_ts",
         "berthing_ts",
         "unberthing_ts",
-        "departure_port_ts"
+        "departure_port_ts",
     ]
 
+    # Alguns arquivos históricos podem não conter todos os atributos textuais.
+    # Trabalhamos apenas com as colunas realmente disponíveis, sem inventar dados.
     available_cols = [col for col in required_cols if col in df_port_call.columns]
-
     df = df_port_call[available_cols].copy()
 
-    agg_dict = {}
+    agg_dict: dict[str, str] = {}
     text_cols = [
         "port_call_id",
         "port",
@@ -38,23 +61,21 @@ def build_master_calls(df_port_call: pd.DataFrame) -> pd.DataFrame:
         "operation_type",
         "source_port",
         "source_port_name",
-        "destination_port", 
-        "destination_port_name"
+        "destination_port",
+        "destination_port_name",
     ]
 
     for col in text_cols:
         if col in df.columns:
             agg_dict[col] = "first"
 
+    # Os mínimos representam os primeiros eventos e os máximos os últimos.
     if "arrival_port_ts" in df.columns:
         agg_dict["arrival_port_ts"] = "min"
-
     if "berthing_ts" in df.columns:
         agg_dict["berthing_ts"] = "min"
-
     if "unberthing_ts" in df.columns:
         agg_dict["unberthing_ts"] = "max"
-
     if "departure_port_ts" in df.columns:
         agg_dict["departure_port_ts"] = "max"
 
@@ -65,18 +86,17 @@ def build_master_calls(df_port_call: pd.DataFrame) -> pd.DataFrame:
         .reset_index(drop=True)
     )
 
+    # Colunas de exibição facilitam a leitura das tabelas e gráficos da EDA.
     master["port_display"] = (
         master["port"].astype("string").fillna("")
         + " - "
         + master["port_name"].astype("string").fillna("")
     )
-
     master["source_port_display"] = (
         master["source_port"].astype("string").fillna("")
         + " - "
         + master["source_port_name"].astype("string").fillna("")
     )
-
     master["destination_port_display"] = (
         master["destination_port"].astype("string").fillna("")
         + " - "
