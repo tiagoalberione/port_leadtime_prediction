@@ -1,106 +1,102 @@
+"""Baselines históricos usados como referência no Capítulo 4."""
+
+import numpy as np
 import pandas as pd
 
 
-def add_global_mean_baseline(
+def predict_global_median(
     train_df: pd.DataFrame,
     target_col: str,
     scoring_df: pd.DataFrame,
-    output_col: str = "pred_global_mean",
-) -> pd.DataFrame:
-    """Predict the global historical mean from the training set."""
-    result = scoring_df.copy()
-    result[output_col] = train_df[target_col].mean()
-    return result
+) -> np.ndarray:
+    """Prevê a mediana global histórica para todas as observações.
+
+    A mediana global responde à pergunta mais simples possível: sem usar nenhum
+    contexto da escala atual, qual foi o tempo típico observado no treino?
+    Como a distribuição de permanência é fortemente assimétrica, a mediana é
+    mais robusta a estadias extremas do que a média.
+    """
+    global_median = train_df[target_col].median()
+    return np.repeat(global_median, len(scoring_df))
 
 
-def add_global_median_baseline(
-    train_df: pd.DataFrame,
-    target_col: str,
-    scoring_df: pd.DataFrame,
-    output_col: str = "pred_global_median",
-) -> pd.DataFrame:
-    """Predict the global historical median from the training set."""
-    result = scoring_df.copy()
-    result[output_col] = train_df[target_col].median()
-    return result
-
-
-def add_group_median_baseline(
+def predict_group_median(
     train_df: pd.DataFrame,
     scoring_df: pd.DataFrame,
     group_cols: list[str],
     target_col: str,
-    output_col: str,
-) -> pd.DataFrame:
-    """Predict historical median by group, falling back to global median."""
-    result = scoring_df.copy()
+    min_group_size: int = 1,
+) -> np.ndarray:
+    """Prevê a mediana histórica de um grupo com fallback global.
+
+    Esta função permite, por exemplo, calcular a mediana por porto. Grupos com
+    menos observações que `min_group_size` são considerados insuficientes e
+    recebem a mediana global do treino.
+    """
     global_median = train_df[target_col].median()
 
-    group_median = (
+    stats = (
         train_df.groupby(group_cols, dropna=False)[target_col]
-        .median()
+        .agg(["median", "count"])
         .reset_index()
-        .rename(columns={target_col: output_col})
+    )
+    stats.loc[stats["count"] < min_group_size, "median"] = np.nan
+
+    scored = scoring_df[group_cols].copy().merge(
+        stats[group_cols + ["median"]],
+        on=group_cols,
+        how="left",
     )
 
-    result = result.merge(group_median, on=group_cols, how="left")
-    result[output_col] = result[output_col].fillna(global_median)
+    return scored["median"].fillna(global_median).to_numpy()
 
-    return result
 
-def add_hierarchical_median_baseline(
+def predict_hierarchical_median(
     train_df: pd.DataFrame,
     scoring_df: pd.DataFrame,
     target_col: str,
     primary_group_cols: list[str],
     fallback_group_cols: list[str],
     min_group_size: int = 30,
-    output_col: str = "pred_hierarchical_median",
-) -> pd.DataFrame:
-    """Predict using a hierarchical historical median with fallback levels."""
-    result = scoring_df.copy()
+) -> np.ndarray:
+    """Prevê usando uma hierarquia de medianas históricas.
+
+    Para o baseline principal do TCC, a hierarquia recomendada é:
+    `porto + tipo de operação` -> `porto` -> mediana global.
+
+    O primeiro nível só é aceito quando possui pelo menos `min_group_size`
+    registros no treino. Isso evita tratar uma mediana calculada a partir de um
+    ou dois casos como se fosse uma estimativa estável.
+    """
     global_median = train_df[target_col].median()
 
-    primary_stats = (
+    primary = (
         train_df.groupby(primary_group_cols, dropna=False)[target_col]
         .agg(["median", "count"])
         .reset_index()
     )
+    primary = primary[primary["count"] >= min_group_size]
+    primary = primary[primary_group_cols + ["median"]].rename(
+        columns={"median": "primary_median"}
+    )
 
-    primary_stats = primary_stats[primary_stats["count"] >= min_group_size]
-    primary_stats = primary_stats.rename(columns={"median": output_col})
-    primary_stats = primary_stats[primary_group_cols + [output_col]]
-
-    fallback_col = f"{output_col}_fallback"
-
-    fallback_stats = (
+    fallback = (
         train_df.groupby(fallback_group_cols, dropna=False)[target_col]
         .agg(["median", "count"])
         .reset_index()
     )
-
-    fallback_stats = fallback_stats[fallback_stats["count"] >= min_group_size]
-    fallback_stats = fallback_stats.rename(columns={"median": fallback_col})
-    fallback_stats = fallback_stats[fallback_group_cols + [fallback_col]]
-
-    result = result.merge(
-        primary_stats,
-        on=primary_group_cols,
-        how="left",
+    fallback = fallback[fallback["count"] >= min_group_size]
+    fallback = fallback[fallback_group_cols + ["median"]].rename(
+        columns={"median": "fallback_median"}
     )
 
-    result = result.merge(
-        fallback_stats,
-        on=fallback_group_cols,
-        how="left",
-    )
+    scored = scoring_df[primary_group_cols].copy()
+    scored = scored.merge(primary, on=primary_group_cols, how="left")
+    scored = scored.merge(fallback, on=fallback_group_cols, how="left")
 
-    result[output_col] = (
-        result[output_col]
-        .fillna(result[fallback_col])
+    return (
+        scored["primary_median"]
+        .fillna(scored["fallback_median"])
         .fillna(global_median)
+        .to_numpy()
     )
-
-    result = result.drop(columns=[fallback_col])
-
-    return result
