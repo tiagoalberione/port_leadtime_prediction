@@ -94,8 +94,16 @@ def build_port_call_base() -> pd.DataFrame:
     df_qc = add_event_presence_flags(df_master)
     df_qc = add_temporal_consistency_flags(df_qc)
     df_qc = add_duration_check_columns(df_qc)
-    df_qc = add_extreme_duration_flags(df_qc)
-    df_qc = define_eda_eligibility(df_qc)
+    df_qc = add_extreme_duration_flags(
+        df_qc,
+        max_wait_days=30,
+        max_operation_days=30,
+        max_total_days=60,
+    )
+    df_qc = define_eda_eligibility(
+        df_qc,
+        min_arrival_date="2023-01-01",
+    )
     df_qc.to_parquet(MASTER_PORT_CALLS_QC_FILE, index=False)
 
     quality_summary = build_quality_summary(df_qc)
