@@ -85,8 +85,8 @@ Prediction moment for Chapter 4: at `arrival_port_ts`, predict `t_total_port_sta
 | Feature | Classification | What the calculation uses |
 |---|---|---|
 | `arrivals_same_day_port` | `EDA_ONLY` | Counts all arrivals for the same `port` and calendar `arrival_date`, including arrivals that may occur later than the current vessel on the same day. Audit: 85,594 rows, or 66.0320% of `eda_base`, include future same-day arrivals in this count. |
-| `arrivals_prev_day_port` | `SAFE_FOR_PREDICTION` | Uses the prior row in the daily arrival-count series by port, i.e. the previous calendar day represented in the port series. It excludes the current arrival date. |
-| `arrivals_prev_7d_avg_port` | `SAFE_FOR_PREDICTION` | Uses shifted daily arrival counts and a rolling window over prior days, excluding the current arrival date. |
+| `arrivals_prev_day_port` | `REQUIRES_REDESIGN` | Uses the prior observed arrival-date row in the daily arrival-count series by port. Because dates with zero arrivals are absent, this is not necessarily the immediately previous calendar day. It does not leak future information, but its semantics do not match the current name/intended interpretation. |
+| `arrivals_prev_7d_avg_port` | `REQUIRES_REDESIGN` | Uses `shift(1).rolling(7, ...)` over previous observed arrival-date rows. Because zero-arrival dates are absent, this is not necessarily the previous seven calendar days. It does not leak future information, but needs redesign before Chapter 4 prediction use. |
 | `avg_wait_prev_20_calls_port` | `REQUIRES_REDESIGN` | Uses `t_wait_for_berthing_h` from the previous 20 port calls by arrival order. The shift excludes the current row but does not ensure those previous calls had already departed before current `arrival_port_ts`. |
 | `avg_operation_prev_20_calls_port` | `REQUIRES_REDESIGN` | Same issue, using `t_operation_h` from previous calls by arrival order. |
 | `std_wait_prev_20_calls_port` | `REQUIRES_REDESIGN` | Same issue, using `t_wait_for_berthing_h` from previous calls by arrival order. |
@@ -147,10 +147,11 @@ Conclusion: the current `first` aggregation rule was not changed. Only 1 of 79 r
 ## Decisions Still Required Before Chapter 4
 
 - Decide whether to redesign prior-call duration features so they use only calls whose `departure_port_ts` is before the current `arrival_port_ts`. Until then, keep `avg_wait_prev_20_calls_port`, `avg_operation_prev_20_calls_port` and `std_wait_prev_20_calls_port` out of the predictive feature set.
+- Keep `arrivals_prev_day_port` and `arrivals_prev_7d_avg_port` out of the Chapter 4 predictive feature set until they are redesigned with a complete daily calendar per port, filling zero-arrival dates before applying lag/rolling calculations.
 - Decide whether `arrivals_same_day_port` should remain EDA-only or be replaced by an arrival-so-far feature calculated within the calendar day.
 - Decide whether to keep realized same-day weather only for EDA and use only `prev_*` weather features for modeling.
 - Decide whether the single operation-type conflict that changes flags (`port_call_id=260102025`) needs manual data correction or simply documentation.
 
 ## Conclusion
 
-The second Chapter 3 refactoring block is behavior-preserving for the final analytical base. The code is more explicit about what is descriptive EDA, what is safe at the prediction moment, and what requires redesign before Chapter 4 modeling. No issue in this block requires stopping the structural refactor, but the `REQUIRES_REDESIGN` features must not be used silently in the final predictive model.
+The second Chapter 3 refactoring block is behavior-preserving for the final analytical base. The code is more explicit about what is descriptive EDA, what is safe at the prediction moment, and what requires redesign before Chapter 4 modeling. No issue in this block requires stopping the structural refactor, but the `REQUIRES_REDESIGN` features, including the current lagged arrival-count features, must not be used silently in the final predictive model.

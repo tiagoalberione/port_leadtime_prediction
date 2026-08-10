@@ -21,10 +21,10 @@ def create_basic_congestion_features(df: pd.DataFrame) -> pd.DataFrame:
 
     - `arrivals_same_day_port`: `EDA_ONLY`, pois conta todas as chegadas do dia,
       inclusive as que podem ocorrer depois da embarcação atual;
-    - `arrivals_prev_day_port`: `SAFE_FOR_PREDICTION`, pois usa o total do dia
-      calendário anterior;
-    - `arrivals_prev_7d_avg_port`: `SAFE_FOR_PREDICTION`, pois usa apenas dias
-      anteriores ao dia da chegada;
+    - `arrivals_prev_day_port`: `REQUIRES_REDESIGN`, pois usa a data de chegada
+      observada anterior no porto, não necessariamente o dia calendário anterior;
+    - `arrivals_prev_7d_avg_port`: `REQUIRES_REDESIGN`, pois usa as sete linhas
+      anteriores com chegadas observadas, sem preencher dias sem chegada com zero;
     - `avg_wait_prev_20_calls_port`, `avg_operation_prev_20_calls_port` e
       `std_wait_prev_20_calls_port`: `REQUIRES_REDESIGN`, pois são chamadas
       anteriores por ordem de chegada. A auditoria mostrou que a janela pode
@@ -44,7 +44,10 @@ def create_basic_congestion_features(df: pd.DataFrame) -> pd.DataFrame:
     ------------------
     As médias de duração anteriores são úteis para descrição histórica, mas não
     devem entrar no modelo final até serem reconstruídas usando somente escalas
-    encerradas antes da chegada atual.
+    encerradas antes da chegada atual. As contagens defasadas de chegadas também
+    precisam de redesign para previsão: a versão correta deve criar um calendário
+    diário completo por porto, preencher dias sem chegada com zero e só então
+    aplicar lag e janelas móveis.
     """
     missing_cols = [col for col in REQUIRED_CONGESTION_COLUMNS if col not in df.columns]
     if missing_cols:
@@ -79,13 +82,15 @@ def create_basic_congestion_features(df: pd.DataFrame) -> pd.DataFrame:
         .sort_values(["port", "arrival_date"])
     )
 
-    # SAFE_FOR_PREDICTION: total de chegadas do dia calendário anterior.
+    # REQUIRES_REDESIGN para previsão: este shift retorna a data observada anterior
+    # com chegada no porto; dias sem chegada não existem em `daily_arrivals`.
     daily_arrivals["arrivals_prev_day_port"] = (
         daily_arrivals.groupby("port")["arrivals_same_day_port"]
         .shift(1)
     )
 
-    # SAFE_FOR_PREDICTION: média dos totais diários anteriores, sem o dia atual.
+    # REQUIRES_REDESIGN para previsão: a janela usa as sete linhas anteriores com
+    # chegada observada, não os sete dias calendário anteriores com zeros explícitos.
     daily_arrivals["arrivals_prev_7d_avg_port"] = (
         daily_arrivals.groupby("port")["arrivals_same_day_port"]
         .transform(lambda s: s.shift(1).rolling(7, min_periods=3).mean())
