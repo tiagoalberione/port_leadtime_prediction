@@ -1,3 +1,11 @@
+"""Limpezas basicas compartilhadas pela preparacao dos dados.
+
+As funcoes deste modulo tratam problemas recorrentes dos arquivos brutos:
+nomes de colunas com acentos, espacos invisiveis, marcadores textuais de nulo e
+datas com ou sem fuso horario. Sao transformacoes de suporte para o Capitulo 3,
+antes da consolidacao por escala portuaria.
+"""
+
 import re
 import unicodedata
 
@@ -6,14 +14,43 @@ import pandas as pd
 
 TZ_OFFSET_PATTERN = re.compile(r"(?:Z|[+-]\d{2}(?::?\d{2})?)$")
 DEFAULT_LOCAL_TZ = "America/Sao_Paulo"
+MISSING_TOKENS = {
+    "": pd.NA,
+    " ": pd.NA,
+    "nan": pd.NA,
+    "NaN": pd.NA,
+    "none": pd.NA,
+    "None": pd.NA,
+    "null": pd.NA,
+    "NULL": pd.NA,
+    "<NA>": pd.NA,
+}
 
 
 def standardize_column_names(df: pd.DataFrame) -> pd.DataFrame:
-    """Convert column names to snake_case without accents."""
+    """Padroniza nomes de colunas para snake_case sem acentos.
+
+    A padronizacao permite que o restante do pipeline use nomes estaveis,
+    independentemente de acentos, maiusculas ou pontuacao nos arquivos originais.
+
+    Parameters
+    ----------
+    df:
+        DataFrame bruto ou intermediario.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Copia do DataFrame com nomes de colunas normalizados.
+    """
     new_columns = []
 
     for col in df.columns:
-        col = unicodedata.normalize("NFKD", str(col)).encode("ascii", "ignore").decode("utf-8")
+        col = (
+            unicodedata.normalize("NFKD", str(col))
+            .encode("ascii", "ignore")
+            .decode("utf-8")
+        )
         col = col.strip().lower()
         col = re.sub(r"[^a-z0-9]+", "_", col)
         col = re.sub(r"_+", "_", col).strip("_")
@@ -25,33 +62,48 @@ def standardize_column_names(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def normalize_missing_values(df: pd.DataFrame) -> pd.DataFrame:
-    """Normalize common string representations of missing values."""
+    """Converte marcadores textuais comuns de nulo para `pd.NA`.
+
+    Esta etapa reduz diferencas artificiais entre arquivos, como celulas vazias,
+    `NULL` ou `nan` em texto. Isso evita que valores ausentes sejam tratados como
+    categorias reais na EDA ou em etapas posteriores.
+
+    Parameters
+    ----------
+    df:
+        DataFrame com possiveis colunas textuais.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Copia com marcadores textuais de nulo normalizados.
+    """
     df = df.copy()
-
-    missing_tokens = {
-        "": pd.NA,
-        " ": pd.NA,
-        "nan": pd.NA,
-        "NaN": pd.NA,
-        "none": pd.NA,
-        "None": pd.NA,
-        "null": pd.NA,
-        "NULL": pd.NA,
-        "<NA>": pd.NA,
-    }
-
     object_cols = df.select_dtypes(include=["object", "string"]).columns
 
     for col in object_cols:
-        df[col] = df[col].replace(missing_tokens)
+        df[col] = df[col].replace(MISSING_TOKENS)
 
     return df
 
 
 def trim_string_columns(df: pd.DataFrame) -> pd.DataFrame:
-    """Trim whitespace and carriage returns from string columns."""
-    df = df.copy()
+    """Remove espacos e quebras de linha das colunas textuais.
 
+    Os dados brutos podem conter quebras de linha ou tabulacoes dentro de campos
+    textuais. A limpeza deixa chaves e categorias comparaveis entre arquivos.
+
+    Parameters
+    ----------
+    df:
+        DataFrame que sera limpo.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Copia com colunas textuais aparadas e nulos normalizados.
+    """
+    df = df.copy()
     object_cols = df.select_dtypes(include=["object", "string"]).columns
 
     for col in object_cols:
@@ -62,62 +114,57 @@ def trim_string_columns(df: pd.DataFrame) -> pd.DataFrame:
             .str.strip()
         )
 
-    df = normalize_missing_values(df)
-    return df
+    return normalize_missing_values(df)
 
 
 def parse_mixed_datetime_series(
     s: pd.Series,
     local_tz: str = DEFAULT_LOCAL_TZ,
 ) -> pd.Series:
-    """
-    Parse a datetime series containing a mix of timezone-aware and timezone-naive strings.
+    """Converte uma serie de datas com mistura de formatos de fuso horario.
 
-    Supported examples:
-    - '2020-10-30 18:00:00-03'
-    - '2025-12-31 23:00:00.0000000'
+    Alguns arquivos trazem timestamps com offset explicito, como
+    `2020-10-30 18:00:00-03`, enquanto outros trazem horario local sem fuso,
+    como `2025-12-31 23:00:00.0000000`. Para comparar duracoes, os valores com
+    fuso sao convertidos para `local_tz` e depois ficam sem timezone, como hora
+    local de parede.
 
-    Output:
-    - pandas datetime64[ns]
-    - timezone removed after conversion to the local timezone
-    - final values represent local wall-clock time
+    Parameters
+    ----------
+    s:
+        Serie textual ou mista com datas e horarios.
+    local_tz:
+        Fuso horario local usado para converter valores que ja tem offset.
+
+    Returns
+    -------
+    pandas.Series
+        Serie `datetime64[ns]` sem timezone.
+
+    Risco metodologico
+    ------------------
+    Valores sem offset sao assumidos como horario local. Essa escolha deve ser
+    mantida consistente porque os targets sao diferencas entre eventos da escala.
     """
     s = s.copy()
 
-    # Normalize whitespace and hidden characters first
     s = (
         s.astype("string")
         .str.replace(r"[\r\n\t]+", " ", regex=True)
         .str.strip()
+        .replace(MISSING_TOKENS)
     )
 
-    # Normalize common textual null values
-    s = s.replace(
-        {
-            "": pd.NA,
-            " ": pd.NA,
-            "nan": pd.NA,
-            "NaN": pd.NA,
-            "none": pd.NA,
-            "None": pd.NA,
-            "null": pd.NA,
-            "NULL": pd.NA,
-            "<NA>": pd.NA,
-        }
-    )
-
-    # Detect values that already contain explicit timezone information
     has_tz = s.str.contains(TZ_OFFSET_PATTERN, na=False)
-
     result = pd.Series(pd.NaT, index=s.index, dtype="datetime64[ns]")
 
-    # Parse timezone-aware values, convert to local timezone, then drop timezone
+    # Valores com offset sao trazidos para o fuso local antes de remover o tz.
     if has_tz.any():
         aware = pd.to_datetime(s[has_tz], errors="coerce", utc=True)
         aware = aware.dt.tz_convert(local_tz).dt.tz_localize(None)
         result.loc[has_tz] = aware
 
-    # Parse timezone-naive values directly as local wall-clock time
+    # Valores sem offset ja representam a hora local informada pela fonte.
     if (~has_tz).any():
         naive = pd.to_datetime(s[~has_tz], errors="coerce")
         result.loc[~has_tz] = naive
@@ -130,7 +177,25 @@ def parse_datetime_columns(
     datetime_cols: list[str],
     local_tz: str = DEFAULT_LOCAL_TZ,
 ) -> pd.DataFrame:
-    """Parse selected datetime columns using mixed-timezone support."""
+    """Aplica a conversao de datas nas colunas selecionadas.
+
+    A funcao mantem o pipeline explicito: cada fonte decide quais colunas sao
+    timestamps relevantes, e esta rotina apenas aplica a regra comum de parsing.
+
+    Parameters
+    ----------
+    df:
+        DataFrame que contem as colunas de data.
+    datetime_cols:
+        Lista de colunas que devem ser convertidas quando existirem.
+    local_tz:
+        Fuso horario local usado para timestamps com offset explicito.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Copia do DataFrame com as colunas de data convertidas.
+    """
     df = df.copy()
 
     for col in datetime_cols:

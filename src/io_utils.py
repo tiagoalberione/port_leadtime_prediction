@@ -1,3 +1,10 @@
+"""Funcoes simples de leitura dos CSVs brutos usados no TCC.
+
+Os dados baixados para o Capitulo 3 vieram de fontes publicas com separadores e
+codificacoes nem sempre uniformes. Este modulo centraliza apenas a logica minima
+para encontrar arquivos CSV e tentar le-los de forma reprodutivel.
+"""
+
 from pathlib import Path
 
 import pandas as pd
@@ -8,7 +15,22 @@ DEFAULT_ENCODINGS = ["utf-8", "latin1", "cp1252"]
 
 
 def list_csv_files(input_dir: Path) -> list[Path]:
-    """List CSV files inside a directory."""
+    """Lista os arquivos CSV de um diretorio de entrada.
+
+    A funcao existe para tornar explicito quais arquivos brutos entram em cada
+    etapa do pipeline do Capitulo 3. A ordenacao deixa a concatenacao
+    reprodutivel entre execucoes.
+
+    Parameters
+    ----------
+    input_dir:
+        Diretorio que contem os CSVs baixados ou exportados manualmente.
+
+    Returns
+    -------
+    list[pathlib.Path]
+        Caminhos dos arquivos CSV encontrados, em ordem alfabetica.
+    """
     return sorted(input_dir.glob("*.csv"))
 
 
@@ -18,11 +40,42 @@ def read_csv_robust(
     encodings: list[str] | None = None,
     min_columns: int = 2,
 ) -> pd.DataFrame:
-    """
-    Read a CSV file testing multiple separators and encodings.
+    """Le um CSV testando separadores e codificacoes comuns.
 
-    A parsing attempt is only accepted if the resulting DataFrame has at least
-    `min_columns` columns.
+    Esta rotina existe porque os arquivos usados na base empirica podem chegar
+    com `;` ou `,` e com codificacoes diferentes. Uma tentativa so e aceita
+    quando produz pelo menos `min_columns` colunas, evitando tratar uma linha
+    inteira como uma unica coluna por erro de separador.
+
+    Parameters
+    ----------
+    file_path:
+        Caminho do CSV bruto.
+    separators:
+        Separadores a testar. Quando omitido, usa os separadores padrao do
+        projeto.
+    encodings:
+        Codificacoes a testar. Quando omitido, usa as codificacoes padrao do
+        projeto.
+    min_columns:
+        Numero minimo de colunas para aceitar a leitura automaticamente.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Conteudo do CSV lido com a primeira combinacao plausivel.
+
+    Raises
+    ------
+    ValueError
+        Quando nenhuma combinacao de separador/codificacao produz uma leitura
+        confiavel.
+
+    Risco metodologico
+    ------------------
+    Se um arquivo realmente tiver uma unica coluna valida, esta funcao rejeitara
+    a leitura. No TCC, os arquivos esperados sao tabulares e possuem varias
+    colunas, entao a rejeicao ajuda a detectar erro de importacao.
     """
     separators = separators or DEFAULT_SEPARATORS
     encodings = encodings or DEFAULT_ENCODINGS
@@ -70,7 +123,25 @@ def load_csv_files_from_dir(
     add_source_file: bool = True,
     min_columns: int = 2,
 ) -> pd.DataFrame:
-    """Load and concatenate all CSV files from a directory."""
+    """Carrega e concatena todos os CSVs de um diretorio.
+
+    A concatenacao e usada para juntar arquivos trimestrais ou exportacoes
+    particionadas sem perder a rastreabilidade opcional do arquivo de origem.
+
+    Parameters
+    ----------
+    input_dir:
+        Diretorio com os CSVs de uma mesma fonte.
+    add_source_file:
+        Se verdadeiro, cria a coluna `source_file` com o nome do arquivo bruto.
+    min_columns:
+        Numero minimo de colunas aceito em cada CSV.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Tabela unica formada pela concatenacao vertical dos arquivos.
+    """
     files = list_csv_files(input_dir)
 
     if not files:

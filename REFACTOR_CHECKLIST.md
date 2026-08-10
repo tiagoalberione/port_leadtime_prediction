@@ -19,18 +19,18 @@ Este arquivo acompanha a simplificação do repositório antes da revisão do no
 - [x] Separar claramente o preprocessamento com e sem padronização numérica.
 
 ## Ainda a revisar antes do notebook do Capítulo 4
-- [ ] Revisar e comentar integralmente `src/io_utils.py`.
-- [ ] Revisar e comentar integralmente `src/data_sources/port_call.py`.
+- [x] Revisar e comentar integralmente `src/io_utils.py`.
+- [x] Revisar e comentar integralmente `src/data_sources/port_call.py`.
 - [ ] Revisar e comentar integralmente `src/data_sources/ports.py`.
 - [ ] Revisar e comentar integralmente `src/data_sources/weather.py`.
-- [ ] Revisar e comentar integralmente `src/processing/cleaning.py`.
-- [ ] Revisar e comentar integralmente `src/processing/validation.py`.
-- [ ] Revisar e comentar integralmente `src/processing/targets.py`.
+- [x] Revisar e comentar integralmente `src/processing/cleaning.py`.
+- [x] Revisar e comentar integralmente `src/processing/validation.py`.
+- [x] Revisar e comentar integralmente `src/processing/targets.py`.
 - [ ] Revisar e comentar integralmente `src/features/calendar.py`.
 - [ ] Revisar `src/features/congestion.py` e separar features válidas para EDA das features válidas para previsão.
 - [ ] Revisar e comentar integralmente `src/features/operation_types.py`.
 - [ ] Revisar `src/features/weather_features.py` e deixar explícita a distinção entre clima do próprio dia e clima histórico.
-- [ ] Revisar e comentar `pipelines/build_eda_base.py`.
+- [x] Revisar e comentar `pipelines/build_eda_base.py`.
 - [ ] Verificar referências a arquivos/diretórios removidos.
 - [ ] Atualizar `README.md` ao final da estrutura.
 - [ ] Revisar `.gitignore` conforme a estrutura final.

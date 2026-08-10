@@ -1,3 +1,5 @@
+"""Criacao dos targets de duracao usados na EDA e na modelagem."""
+
 import numpy as np
 import pandas as pd
 
@@ -11,7 +13,28 @@ TARGET_COLUMNS = [
 
 
 def filter_eligible_port_calls(df: pd.DataFrame) -> pd.DataFrame:
-    """Filter only port calls eligible for EDA."""
+    """Mantem apenas escalas aprovadas pelo controle de qualidade.
+
+    A funcao separa claramente a decisao de elegibilidade, feita em
+    `validation.py`, da criacao dos targets finais. Assim, a base de QC continua
+    auditavel e a base de targets recebe apenas registros metodologicamente
+    validos para analise de duracao.
+
+    Parameters
+    ----------
+    df:
+        Base consolidada com a coluna booleana `eligible_for_eda`.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Copia contendo somente registros elegiveis.
+
+    Raises
+    ------
+    ValueError
+        Quando a coluna de elegibilidade ainda nao foi criada.
+    """
     if "eligible_for_eda" not in df.columns:
         raise ValueError("Column 'eligible_for_eda' not found in DataFrame.")
 
@@ -19,7 +42,27 @@ def filter_eligible_port_calls(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def create_duration_targets(df: pd.DataFrame) -> pd.DataFrame:
-    """Create final target duration columns in hours."""
+    """Calcula os targets finais de duracao em horas.
+
+    O target principal do TCC e `t_total_port_stay_h`, medido da chegada ao porto
+    ate a saida. Os componentes de espera, operacao e pos-operacao ajudam a EDA
+    a explicar de onde vem a permanencia total.
+
+    Parameters
+    ----------
+    df:
+        Base elegivel com timestamps completos e coerentes.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Copia com targets de duracao em horas.
+
+    Risco metodologico
+    ------------------
+    Estes targets usam eventos conhecidos apenas depois que a escala terminou.
+    Eles sao variaveis-resposta, nao features disponiveis no instante da chegada.
+    """
     df = df.copy()
 
     df["t_wait_for_berthing_h"] = (
@@ -42,7 +85,21 @@ def create_duration_targets(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def create_duration_targets_in_days(df: pd.DataFrame) -> pd.DataFrame:
-    """Create target duration columns in days."""
+    """Cria versoes em dias dos targets de duracao.
+
+    As colunas em horas preservam a unidade de avaliacao dos modelos. As versoes
+    em dias facilitam tabelas e interpretacoes descritivas no texto do TCC.
+
+    Parameters
+    ----------
+    df:
+        Base com os targets em horas ja calculados.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Copia com colunas equivalentes terminadas em `_d`.
+    """
     df = df.copy()
 
     for col in TARGET_COLUMNS:
@@ -52,7 +109,27 @@ def create_duration_targets_in_days(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def create_log_targets(df: pd.DataFrame) -> pd.DataFrame:
-    """Create log-transformed versions of the target columns."""
+    """Cria versoes log-transformadas dos targets em horas.
+
+    A transformacao `log1p` e util porque os tempos de permanencia costumam ter
+    cauda longa. Ela preserva zeros e reduz a influencia visual e estatistica de
+    valores muito altos em analises auxiliares.
+
+    Parameters
+    ----------
+    df:
+        Base com targets em horas nao negativos.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Copia com colunas `log_*` para cada target em horas.
+
+    Risco metodologico
+    ------------------
+    A escala log deve ser interpretada como transformacao auxiliar. Resultados
+    finais em horas precisam voltar a escala original quando forem comunicados.
+    """
     df = df.copy()
 
     for col in TARGET_COLUMNS:
@@ -62,7 +139,27 @@ def create_log_targets(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def create_target_severity_flags(df: pd.DataFrame) -> pd.DataFrame:
-    """Create high/extreme flags for selected targets using empirical quantiles."""
+    """Cria flags descritivas de duracoes altas e extremas.
+
+    As flags usam os quantis empiricos P75 e P90 da propria base elegivel para
+    apoiar a EDA de severidade. Elas nao representam uma regra operacional real,
+    apenas uma forma simples de segmentar a distribuicao observada.
+
+    Parameters
+    ----------
+    df:
+        Base com targets em horas.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Copia com flags `*_high` e `*_extreme` para targets selecionados.
+
+    Risco metodologico
+    ------------------
+    Como os cortes sao calculados com a base completa, estas flags sao
+    descritivas. Elas nao devem ser usadas como features preditivas no Capitulo 4.
+    """
     df = df.copy()
 
     cols_for_flags = [
@@ -82,7 +179,21 @@ def create_target_severity_flags(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def build_target_summary(df: pd.DataFrame) -> pd.DataFrame:
-    """Build a summary table for the final target columns."""
+    """Resume a distribuicao dos targets finais.
+
+    A tabela exportada apoia o Capitulo 3 ao mostrar media, mediana, dispersao e
+    cauda dos tempos de permanencia e seus componentes.
+
+    Parameters
+    ----------
+    df:
+        Base elegivel com targets calculados em horas.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Tabela com estatisticas descritivas por target.
+    """
     rows = []
 
     for col in TARGET_COLUMNS:
