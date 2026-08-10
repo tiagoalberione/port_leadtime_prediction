@@ -21,15 +21,15 @@ Este arquivo acompanha a simplificação do repositório antes da revisão do no
 ## Ainda a revisar antes do notebook do Capítulo 4
 - [x] Revisar e comentar integralmente `src/io_utils.py`.
 - [x] Revisar e comentar integralmente `src/data_sources/port_call.py`.
-- [ ] Revisar e comentar integralmente `src/data_sources/ports.py`.
-- [ ] Revisar e comentar integralmente `src/data_sources/weather.py`.
+- [x] Revisar e comentar integralmente `src/data_sources/ports.py`.
+- [x] Revisar e comentar integralmente `src/data_sources/weather.py`.
 - [x] Revisar e comentar integralmente `src/processing/cleaning.py`.
 - [x] Revisar e comentar integralmente `src/processing/validation.py`.
 - [x] Revisar e comentar integralmente `src/processing/targets.py`.
-- [ ] Revisar e comentar integralmente `src/features/calendar.py`.
-- [ ] Revisar `src/features/congestion.py` e separar features válidas para EDA das features válidas para previsão.
-- [ ] Revisar e comentar integralmente `src/features/operation_types.py`.
-- [ ] Revisar `src/features/weather_features.py` e deixar explícita a distinção entre clima do próprio dia e clima histórico.
+- [x] Revisar e comentar integralmente `src/features/calendar.py`.
+- [x] Revisar `src/features/congestion.py` e separar features válidas para EDA das features válidas para previsão.
+- [x] Revisar e comentar integralmente `src/features/operation_types.py`.
+- [x] Revisar `src/features/weather_features.py` e deixar explícita a distinção entre clima do próprio dia e clima histórico.
 - [x] Revisar e comentar `pipelines/build_eda_base.py`.
 - [ ] Verificar referências a arquivos/diretórios removidos.
 - [ ] Atualizar `README.md` ao final da estrutura.

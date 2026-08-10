@@ -1,3 +1,5 @@
+"""Leitura e preparação da base diária de clima usada no TCC."""
+
 from pathlib import Path
 
 import pandas as pd
@@ -6,6 +8,7 @@ from src.io_utils import load_csv_files_from_dir
 from src.processing.cleaning import standardize_column_names, trim_string_columns
 
 
+COORD_DECIMALS = 5
 WEATHER_NUMERIC_COLUMNS = [
     "latitude",
     "longitude",
@@ -22,7 +25,22 @@ WEATHER_NUMERIC_COLUMNS = [
 
 
 def load_weather_files(input_dir: Path) -> pd.DataFrame:
-    """Load raw weather files from directory."""
+    """Carrega os CSVs brutos de clima diário.
+
+    O clima entra no Capítulo 3 como enriquecimento descritivo da permanência em
+    porto. A leitura é separada da transformação para manter a origem dos dados
+    auditável.
+
+    Parameters
+    ----------
+    input_dir:
+        Diretório `data/raw/weather` com os arquivos climáticos.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Arquivos climáticos concatenados, ainda em formato bruto.
+    """
     return load_csv_files_from_dir(
         input_dir=input_dir,
         add_source_file=False,
@@ -30,10 +48,29 @@ def load_weather_files(input_dir: Path) -> pd.DataFrame:
     )
 
 
-def process_weather(df: pd.DataFrame, coord_decimals: int = 5) -> pd.DataFrame:
-    """Clean and standardize daily weather data."""
-    df = df.copy()
+def process_weather(df: pd.DataFrame) -> pd.DataFrame:
+    """Limpa a série diária de clima por coordenada.
 
+    A função padroniza nomes, converte a data para dia calendário, transforma
+    medidas climáticas em numéricas e cria coordenadas arredondadas para merge
+    com portos.
+
+    Parameters
+    ----------
+    df:
+        Dados brutos de clima diário.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Série diária limpa, com uma linha por coordenada arredondada e data.
+
+    Risco metodológico
+    ------------------
+    As variáveis climáticas sem defasagem são agregados realizados do dia inteiro.
+    Elas podem apoiar EDA, mas não devem ser tratadas como conhecidas no momento
+    de chegada da embarcação.
+    """
     df = standardize_column_names(df)
     df = trim_string_columns(df)
 
@@ -49,9 +86,11 @@ def process_weather(df: pd.DataFrame, coord_decimals: int = 5) -> pd.DataFrame:
     if "latitude" not in df.columns or "longitude" not in df.columns:
         raise ValueError("Weather data must contain 'latitude' and 'longitude'.")
 
-    df["latitude_r"] = df["latitude"].round(coord_decimals)
-    df["longitude_r"] = df["longitude"].round(coord_decimals)
+    df["latitude_r"] = df["latitude"].round(COORD_DECIMALS)
+    df["longitude_r"] = df["longitude"].round(COORD_DECIMALS)
 
+    # Se a fonte trouxer duplicatas para a mesma coordenada/data, preservamos a
+    # última linha após ordenação para manter o comportamento histórico do TCC.
     df = (
         df.sort_values(["latitude_r", "longitude_r", "date"])
         .drop_duplicates(subset=["latitude_r", "longitude_r", "date"], keep="last")
