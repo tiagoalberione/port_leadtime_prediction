@@ -1,0 +1,12 @@
+test,passed,detail
+evento_do_proprio_dia_nao_altera_features_d_menos_1,True,Evento em D nao afetou fluxo com cutoff D-1.
+evento_futuro_nao_altera_features_passadas,True,Evento futuro em fevereiro nao afetou corte de janeiro.
+espera_so_disponivel_depois_da_atracacao,True,"counts=0.0,1.0"
+operacao_so_disponivel_depois_da_desatracacao,True,"counts=0.0,1.0"
+permanencia_so_disponivel_depois_da_saida,True,"counts=0.0,1.0"
+dias_calendario_sem_eventos_existem_com_zero,True,Jan 4 arrivals_prev_1d=0.0
+target_da_propria_observacao_nao_entra_na_feature,True,known count=0.0
+rolling_nao_usa_linhas_futuras,True,D-1 de 2024-01-03 e 2024-01-02: 0.0
+merge_exclui_eventos_conhecidos_no_futuro,True,searchsorted side='right' aplica cutoff_ts.
+imputacao_ajustada_apenas_no_treino,True,"statistics before=2.0, after=2.0"
+walk_forward_permite_eventos_anteriores_ja_conhecidos,True,Previsao posterior usa escala anterior ja concluida antes de D-1.
