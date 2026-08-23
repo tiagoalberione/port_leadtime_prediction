@@ -1,0 +1,31 @@
+[2026-08-23 09:53:24] Contexto oficial confirmado: G:\My Drive\Graduação e Pós\USP\MBA USP IA e Big Data\TCC\port_leadtime_prediction | cap4/rebuild-safe-historical-features
+[2026-08-23 09:53:24] Python: C:\Users\tiago\miniconda3\envs\mbausp\python.exe
+[2026-08-23 09:53:40] Reproduzindo o Capitulo 4 atual em validation.
+[2026-08-23 09:53:51] Reproduzindo random_forest_original.
+[2026-08-23 09:54:45] Reproduzindo gradient_boosting_original.
+[2026-08-23 09:56:30] Reproduzindo hist_gradient_boosting_original.
+[2026-08-23 09:56:33] Executando comparacao pontual validation/calibration.
+[2026-08-23 09:56:43] Treinando Ridge ORIGINAL.
+[2026-08-23 09:56:45] Treinando Ridge ENRICHED_SAFE_HISTORY.
+[2026-08-23 09:56:48] Treinando Random Forest ORIGINAL.
+[2026-08-23 09:57:45] Treinando Random Forest ENRICHED_SAFE_HISTORY.
+[2026-08-23 09:59:05] Treinando Gradient Boosting ORIGINAL.
+[2026-08-23 10:00:44] Treinando Gradient Boosting ENRICHED_SAFE_HISTORY.
+[2026-08-23 10:12:09] Treinando HistGradientBoosting ORIGINAL.
+[2026-08-23 10:12:10] Treinando HistGradientBoosting ENRICHED_SAFE_HISTORY.
+[2026-08-23 10:12:13] Executando ablacao historica E0-E6.
+[2026-08-23 10:12:13] Ablacao E0_original com hgb.
+[2026-08-23 10:12:14] Ablacao E1_fluxo_d1 com hgb.
+[2026-08-23 10:12:15] Ablacao E2_fluxo_1_3d com hgb.
+[2026-08-23 10:12:17] Ablacao E3_fluxo_1_3_7d com hgb.
+[2026-08-23 10:12:18] Ablacao E4_desempenho_porto com hgb.
+[2026-08-23 10:12:20] Ablacao E5_estado_operacional com hgb.
+[2026-08-23 10:12:21] Ablacao E6_historico_adicional com hgb.
+[2026-08-23 10:12:24] Executando ablacao contextual.
+[2026-08-23 10:12:35] Executando avaliacao final pareada.
+[2026-08-23 10:37:21] Calculando permutation importance.
+[2026-08-23 10:37:27] Executando regressao quantilica.
+[2026-08-23 10:37:28] Quantis HGB ORIGINAL.
+[2026-08-23 10:37:34] Quantis HGB ENRICHED_SAFE_HISTORY.
+[2026-08-23 10:37:46] Analisando P95-P50 e incerteza.
+[2026-08-23 10:37:46] Executando simulacao de estoque de seguranca.
